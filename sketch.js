@@ -52,14 +52,11 @@ let circles = [];
 let points = [];
 let times = 2;
 let slider1;
-let slider2;
-let offset = 0;
 
 function setup() {
   createCanvas(800,600);
   frameRate(60)
   slider1 = createSlider(0,12,0)
-  slider2 = createSlider(2,8,2)
   for (let i = 0; i < PI * 2; i += PI) {
     let x = 200 * cos(i);
     let y = 200 * sin(i);
@@ -82,7 +79,6 @@ function setup() {
 function draw() {
   points = [];
   times = slider1.value();
-  offset = slider2.value();
   background(0)
   translate(width/2, height/2)
 
