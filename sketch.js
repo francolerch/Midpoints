@@ -49,65 +49,110 @@ class dot {
 }
 
 let circles = [];
-let averages = [];
-let times = 0;
-let slider;
+let points = [];
+let times = 2;
+let slider1;
+let slider2;
+let offset = 0;
 
 function setup() {
   createCanvas(800,600);
-  frameRate(30)
-  slider = createSlider(0,4,0)
-  for (let i = .96; i < (PI * 2) ; i += PI/2.5) {
+  frameRate(60)
+  slider1 = createSlider(0,12,0)
+  slider2 = createSlider(2,8,2)
+  for (let i = 0; i < PI * 2; i += PI) {
     let x = 200 * cos(i);
     let y = 200 * sin(i);
-    circles.push(new circle(x, y, random(.96, PI*2)));
+    circles.push(new circle(x, y, PI))
   }
+  for (let i = PI/3; i < PI * 2; i += PI) {
+    let x = 200 * cos(i);
+    let y = 200 * sin(i);
+    circles.push(new circle(x, y, PI * 2))
+  }
+  for (let i = -PI/3; i < PI * 2; i += PI) {
+    let x = 200 * cos(i);
+    let y = 200 * sin(i);
+    circles.push(new circle(x, y, PI * 3))
+  }
+
+  circles = [circles[0], circles[4], circles[3], circles[1], circles[5], circles[2]]
 }
 
 function draw() {
-  averages = [];
-  times = slider.value();
-  console.log(times)
-
-  background(0);
+  points = [];
+  times = slider1.value();
+  offset = slider2.value();
+  background(0)
   translate(width/2, height/2)
+
   for (let i = 0; i < circles.length; i++) {
     circles[i].update();
-
-    this.drawConnectors(parseInt(i), averages)
     circles[i].draw();
+
+    let point = {
+      x: circles[i].dot.x,
+      y: circles[i].dot.y,
+    }
+    points.push(point);
   }
+
+    if (times === 0) {
+      points = []
+    } else if (times > 0) {
+      getRecursivePoints()
+    }
   
-  for (let t = 0; t <= times; t++) {
-    drawAverages(averages)
-    getNewAverages()
+    renderUnions(points);
+}
+
+function getRecursivePoints() {
+  let pointsToReturn = [];
+  
+  for (let i = 0; i < times - 1; i++) {
+    for (let j = 0; j < circles.length; j++) {
+      let lastElements = getLastElements(points)
+      let nextPoint = getNextElement(parseInt(j), lastElements);
+      let pointA = {
+        x: lastElements[j].x,
+        y: lastElements[j].y,
+      }
+      let pointB = {
+        x: nextPoint.x,
+        y: nextPoint.y,
+      }
+      let averagePoint = getAverageBetweenTwoPoints(pointA, pointB);
+
+      pointsToReturn.push(averagePoint)
+    }
+    points = points.concat(pointsToReturn)
   }
+
+  return pointsToReturn;
+}
+
+function renderUnions(arr) {
+  for (let i in arr) {
+    let nextPoint = getNextElement(parseInt(i), arr);
+    let pointA = {
+      x: arr[i].x,
+      y: arr[i].y,
+    }
+    let pointB = {
+      x: nextPoint.x,
+      y: nextPoint.y,
+    }
+
+    drawLine(pointA, pointB)
+}
 }
 
 function getNextElement(i, arr) {
-  if (i === arr.length - 1) {
-    return arr[0];
+  if (i % circles.length === circles.length - 1) {
+    return arr[i - circles.length + 1];
   }
 
-  return arr[i+1];
-}
-
-function drawConnectors(i, averages) {
-  let nextCircle = this.getNextElement(i, circles);
-  let pointA = {
-    x: circles[i].dot.x,
-    y: circles[i].dot.y
-  };
-  let pointB = {
-    x: nextCircle.dot.x,
-    y: nextCircle.dot.y
-  }
-
-  averages.push(getAverageBetweenTwoPoints(pointA, pointB));
-
-  stroke(255);
-  strokeWeight(1);
-  line(pointA.x, pointA.y, pointB.x, pointB.y);
+  return arr[i + 1];
 }
 
 function getAverageBetweenTwoPoints(pointA, pointB) {
@@ -116,23 +161,17 @@ function getAverageBetweenTwoPoints(pointA, pointB) {
     y: (pointA.y + pointB.y) / 2
   }
 }
-
-function drawAverages(arr) {
-  for (let i in arr) {
-    let nextAverages = this.getNextElement(parseInt(i), arr);
-    stroke(255);
-    strokeWeight(1);
-    line(arr[i].x, arr[i].y, nextAverages.x, nextAverages.y);
-  }
+function drawLine(pointA, pointB) {
+  stroke(255);
+  strokeWeight(1);
+  line(pointA.x, pointA.y, pointB.x, pointB.y);
 }
 
-function getNewAverages() {
-  let newAverages = []
-  for (let i in averages) {
-    let nextAverage = this.getNextElement(parseInt(i), averages);
+function getLastElements(arr) {
+  let arrClone = [...arr]
 
-    newAverages.push(getAverageBetweenTwoPoints(averages[i], nextAverage));
+  while (arrClone.length > circles.length) {
+    arrClone.shift();
   }
-
-  drawAverages(newAverages)
+  return arrClone;
 }
